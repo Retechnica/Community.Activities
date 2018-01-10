@@ -1,80 +1,46 @@
-Guidelines for contribuing to this repository
+Ingenia activity for UiPath
+
 ================
 
-### Anatomy of an Activity pack
+This code enables a user to use Ingenia within the UiPath platform. Ingenia automatically categorises content based on the categories, or 'tags', of its user.
 
-   * API
-   * API.Activities
-   * API.Activities.Design
-  
-    API should be the name of the service this pack integrates with (e.g. Excel, Sharepoint, Mail)
-    API is not necessary if the activities use standard .NET types
-    API.Activities.Design is not necessary if designers do not exist but design specific attributes should be placed in a separate file (DesignerMetadata.cs)
+For more information about Ingenia: www.ingenia-api.com
+API documentation: www.ingenia-api.com/documentation
 
+SET UP
+To begin with, a user will need to have an Ingenia account, which is characterised by:
+- an API key
+- a unique bundle_id: this is the identifier for the 'bundle' where the user's 'items' will be saved, similar to a folder. A user can have several bundles.
 
-### Assembly and Package Info
+INPUT
+On an ongoing basis, the user can currently pass the following input to Ingenia:
+- text (required): a block of text
+- tags (optional): a string with the tags that the user wants to associate with the text
 
-   * GlobalAssemblyInfo.cs should be used
-   * Public namespaces should specify an **XmlnsDefinitionAttribute** that is usually **http://schemas.comapny.com/workflow/activities**
-   * NuSpec file should have the approximately same structure as the others
+Note: Ingenia can also extract text from URLs or files (MS Office, PDF, txt, etc.). The activity could be modified to support these use cases if needed.
 
-   
-### Testing and deploying
+Text and tags will be saved on Ingenia's database, which enables several other use cases, as well as the continuous improvement in the accuracy of the categorisation.
 
-  * To pack the packages run nuget.exe with the desired project
+DATA PROCESSING AND OUTPUT
+The goal of this activity is for Ingenia to return the most relevant categories for the text, if any, as selected from the pool of categories of this user.
 
-### Non-breaking changes:
+If the user has no categories, Ingenia will return an empty array of tags.
 
-* Minor version is increased every time a change in the public interface is made (e.g. a public property is added to an activity, a new activity is added)
-* Major version is increased when the package suffers major changes (e.g. some activities become obsolete, the behaviour and the interface change)
-* Any new property should specify a **DefaultValue** attribute. This will decrease the potential damage for forward compatibility
-* Any obsolete property should specify the **Obsolete** attribute, Browsable(false) attribute and  DesignerSerializationVisibilityAttribute if its value is no longer needed. Marking the property as obsolete should not change the behaviour for any of input provided.
+In this context, the user can create categories by sending an item of text with some tags: what's called a 'training item'. 
+By doing this, the user will 'train' Ingenia:
+- per each tag in the 'tags' string, Ingenia will do a 'find or create', thus creating tags for this user.
+- Ingenia will learn that the user wants this text associated with these tags
 
+As soon as at least 4 training items have been sent, Ingenia will automatically start processing the content, aiming to understand what kind of text should be associated with which of the available tags.
 
-### Breaking changes:
+From this point onwards, Ingenia is 'ready to categorise': 
+- if the user sends a training item, Ingenia will use the new information to re-process the content, thus improving the accuracy of the categorisation over time.
+- if the user sends an items without tags, Ingenia will assume it simply needs to be categorised
 
-*inspired from https://github.com/dotnet/corefx/blob/master/Documentation/coding-guidelines/breaking-changes.md*
-
-To help triage breaking changes, we classify them into three buckets:
-
-1. Public Contract
-2. Reasonable Grey Area
-3. Unlikely Grey Area
-
-#### Bucket 1: Public Contract
-*Clear violation of public contract.*
-
-Examples:
-
-* throwing an exception in an existing common scenario where it previously was not thrown
-* An exception is no longer thrown
-* A different behavior is observed after the change for an input
-* renaming a public type, member, or parameter
-* decreasing the range of accepted values within a given parameter
-* changing the value of a public constant or enum member
-
-#### Bucket 2: Reasonable Grey Area
-*Change of behavior that customers would have reasonably depended on.*
-
-Examples:
-
-* throwing a different exception type in an existing common scenario
-* change in timing/order of events (even when not specified in docs)
-* change in parsing of input and throwing new errors (even if parsing behavior is not specified in the docs)
-
-These require judgment: how predictable, obvious, consistent was the behavior?
-
-#### Bucket 3: Unlikely Grey Area
-*Change of behavior that customers could have depended on, but probably wouldn't.*
-
-Examples:
-* correcting behavior in a subtle corner case
-
-As with type 2 changes, these require judgment: what is reasonable and what’s not?
+Either way, Ingenia will send back a response in real-time containing what it considers as the most relevant tags at that point in time, for that text.
+- If the item was a training item, this will include at least the 'user assigned' tags, and possibly also some other, 'machine only assigned' tags, that the user hasn't assigned, but that Ingenia considers relevant.
+- If the item was a normal item, all the tags are 'machine only assigned' by definition.
 
 
-#### What This Means for Contributors
-* All bucket 1, 2, and 3 breaking changes require talking to the repo owners first.
-* If you're not sure in which bucket applies to a given change, contact us as well.
-* It doesn't matter if the old behavior is "wrong", we still need to think through the implications.
-* If a change is deemed too breaking, we can help identify alternatives such as introducing a new API and obsoleting the old one.
+
+
