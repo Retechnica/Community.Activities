@@ -17,7 +17,7 @@ namespace IngeniaActivity
         public OutArgument<string> IngeniaResponse { get; set; }
 
         //
-        // These inputs might need changing, as they are currently just manual inputs.
+        // These inputs are placeholders: currently manual inputs, they will need to be integrated in the workflow.
         //
         [Category("Input")]
         [RequiredArgument]
@@ -25,18 +25,19 @@ namespace IngeniaActivity
 
         [Category("Input")]
         [RequiredArgument]
-        public InArgument<string> Api_key { get; set; }
+        public InArgument<string> ApiKey { get; set; }
 
         [Category("Input")]
         [RequiredArgument]
-        public InArgument<int> Bundle_id { get; set; }
+        public InArgument<int> BundleId { get; set; }
 
 
-        // Optional. To be formatted exactly as below, with as many tags as needed:
+        // Optional field, enables you to train the system. 
+        // A string to be formatted exactly as below, with as many tags as needed:
         // ["tag1", "tag2", "tag3"]
+        // the code then converts this into actual JSON
         [Category("Input")]
         public InArgument<string> Tags { get; set; }
-        //
         //
         //
 
@@ -47,52 +48,60 @@ namespace IngeniaActivity
 
             // Get the various inputs
             var text = Text.Get(context);
-            var api_key = Api_key.Get(context);
-            var bundle_id = Bundle_id.Get(context);
+            var apiKey = ApiKey.Get(context);
+            var bundleId = BundleId.Get(context);
             string tags = JsonConvert.SerializeObject(Tags.Get(context));
 
             // Build the item json
-            var json_values = new Dictionary<string, dynamic>()
+            var jsonValues = new Dictionary<string, dynamic>()
             {
                 { "text", text },
-                { "bundle_id", bundle_id }
+                { "bundle_id", bundleId }
             };
 
             // If there are tags to be assigned, add this key/value to the json
             if (tags.Length > 0)
             {
-                json_values["tags"] = tags;
+                jsonValues["tags"] = tags;
             };
 
             // Serialize the json
-            string json = JsonConvert.SerializeObject(json_values);
+            string json = JsonConvert.SerializeObject(jsonValues);
 
             // Build URL content (e.g. api_key etc.) and encode it correctly
-            var url_content = new Dictionary<string, string>
+            // classify = true requires Ingenia to return the classification results in real time.
+            var urlContent = new Dictionary<string, string>
             {
-                { "api_key", api_key },
+                { "api_key", apiKey },
                 { "classify", "true" },
                 { "json", json }
             };
-            var content = new FormUrlEncodedContent(url_content);
+            var content = new FormUrlEncodedContent(urlContent);
 
             // Post to Ingenia Items URL to do item#create
-            using (var client = new HttpClient())
+            try
             {
-                var response = client.PostAsync("https://ingeniapi.com/v2/items", content).Result;
-
-                if (response.IsSuccessStatusCode)
+                using (var client = new HttpClient())
                 {
-                    var responseContent = response.Content;
+                    var response = client.PostAsync("https://ingeniapi.com/v2/items", content).Result;
 
-                    string responseString = responseContent.ReadAsStringAsync().Result;
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var responseContent = response.Content;
 
-                    //
-                    // This output might need changing. Currently just writes to console and assigns OutArgument IngeniaResponse.
-                    //
-                    IngeniaResponse.Set(context, responseString);
-                    // Console.WriteLine(responseString);
+                        string responseString = responseContent.ReadAsStringAsync().Result;
+
+                        //
+                        // This output might need changing. Currently just writes to console and assigns OutArgument IngeniaResponse.
+                        //
+                        IngeniaResponse.Set(context, responseString);
+                        // Console.WriteLine(responseString);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                throw;
             }
         }
     }
