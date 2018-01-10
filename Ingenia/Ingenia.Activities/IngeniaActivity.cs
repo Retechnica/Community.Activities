@@ -92,10 +92,9 @@ namespace IngeniaActivity
                         string responseString = responseContent.ReadAsStringAsync().Result;
 
                         //
-                        // This output might need changing. Currently just writes to console and assigns OutArgument IngeniaResponse.
+                        // This output currently assigns OutArgument IngeniaResponse.
                         //
                         IngeniaResponse.Set(context, responseString);
-                        // Console.WriteLine(responseString);
                     }
                 }
             }
